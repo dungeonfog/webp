@@ -1,7 +1,15 @@
 use std::convert::TryFrom;
 use std::os::raw::c_int;
 
-mod ffi;
+#[cfg(target_os = "linux")]
+use crate::ffi_linux as ffi;
+#[cfg(target_os = "windows")]
+use crate::ffi_windows as ffi;
+
+#[cfg(target_os = "linux")]
+mod ffi_linux;
+#[cfg(target_os = "windows")]
+mod ffi_windows;
 
 /// Decodes a WebP image and returns RGBA samples, along with the image
 /// dimensions.
