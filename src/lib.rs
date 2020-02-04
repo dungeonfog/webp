@@ -1,13 +1,17 @@
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::os::raw::c_int;
 
 #[cfg(target_os = "linux")]
 use crate::ffi_linux as ffi;
+#[cfg(target_os = "macos")]
+use crate::ffi_macos as ffi;
 #[cfg(target_os = "windows")]
 use crate::ffi_windows as ffi;
 
 #[cfg(target_os = "linux")]
 mod ffi_linux;
+#[cfg(target_os = "macos")]
+mod ffi_macos;
 #[cfg(target_os = "windows")]
 mod ffi_windows;
 
@@ -19,7 +23,14 @@ mod ffi_windows;
 pub fn decode_rgba(data: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
     let mut width: c_int = 0;
     let mut height: c_int = 0;
-    let success = unsafe { ffi::WebPGetInfo(data.as_ptr(), data.len(), &mut width, &mut height) };
+    let success = unsafe {
+        ffi::WebPGetInfo(
+            data.as_ptr(),
+            data.len().try_into().ok()?,
+            &mut width,
+            &mut height,
+        )
+    };
 
     if success == 0 {
         return None;
@@ -43,9 +54,9 @@ pub fn decode_rgba(data: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
     let result = unsafe {
         ffi::WebPDecodeRGBAInto(
             data.as_ptr(),
-            data.len(),
+            data.len().try_into().ok()?,
             output_buffer.as_mut_ptr(),
-            output_buffer.len(),
+            output_buffer.len().try_into().ok()?,
             output_stride,
         )
     };
